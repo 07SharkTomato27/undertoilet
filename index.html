@@ -229,7 +229,9 @@ let showDialogue = true;
     });
     window.addEventListener("keyup", e => keys[e.key] = false);
 
-    startBtn.onclick = startGame;
+    startBtn.addEventListener("click", () => {
+      startGame();
+    });
     retryBtn.onclick = startGame;
 
     setInterval(spawnBullet, 800);
