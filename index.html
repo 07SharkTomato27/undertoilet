@@ -121,7 +121,7 @@ let showDialogue = false;
 }
 
     function spawnBullet() {
-      if (!player.alive) return;
+      if (!player.alive || showDialogue) return;
       const type = Math.random() < 0.5 ? "bone" : "gaster";
       const bullet = {
         x: Math.random() * 600 + 20,
@@ -135,6 +135,17 @@ let showDialogue = false;
 
     function update() {
       if (!player.alive) return;
+
+      if (showDialogue) {
+        if (justPressedZ) {
+          dialogueIndex++;
+          if (dialogueIndex >= dialogues.length) {
+            showDialogue = false;
+          }
+        }
+        justPressedZ = false;
+        return;
+      }
 
       if (keys["ArrowLeft"]) player.x -= player.speed;
       if (keys["ArrowRight"]) player.x += player.speed;
@@ -256,15 +267,15 @@ let showDialogue = false;
     }
 
     let keys = {};
+let justPressedZ = false;
     window.addEventListener("keydown", e => {
-      keys[e.key] = true;
-      if ((e.key === "z" || e.key === "Z") && showDialogue) {
-        dialogueIndex++;
-        if (dialogueIndex >= dialogues.length) {
-          showDialogue = false;
-        }
-      }
-    });
+  if (!keys[e.key]) {
+    keys[e.key] = true;
+    if ((e.key === "z" || e.key === "Z") && showDialogue) {
+      justPressedZ = true;
+    }
+  }
+});
     window.addEventListener("keyup", e => keys[e.key] = false);
 
     startBtn.addEventListener("click", () => {
