@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fight</title>
+  <title>fight</title>
   <style>
     body {
       margin: 0;
@@ -24,73 +24,96 @@
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
+    const bgm = new Audio("assets/bgm.mp3");
+    bgm.loop = true;
+    bgm.volume = 0.5;
+    bgm.play();
+
     const player = {
       x: 320,
       y: 400,
       width: 20,
       height: 20,
       color: "white",
-      speed: 4
+      speed: 4,
+      hp: 100
     };
 
     const bullets = [];
+    const boneImg = new Image();
+    boneImg.src = "assets/bone.png";
+
+    const gasterImg = new Image();
+    gasterImg.src = "assets/gaster.png";
+
+    const charaImg = new Image();
+    charaImg.src = "assets/chara.png";
 
     function spawnBullet() {
+      const type = Math.random() < 0.5 ? "bone" : "gaster";
       const bullet = {
         x: Math.random() * 600 + 20,
-        y: -10,
-        size: 10,
-        speed: 2 + Math.random() * 2
+        y: -20,
+        size: 30,
+        speed: 2 + Math.random() * 2,
+        type: type
       };
       bullets.push(bullet);
     }
 
     function update() {
-      // 移動処理
       if (keys["ArrowLeft"]) player.x -= player.speed;
       if (keys["ArrowRight"]) player.x += player.speed;
       if (keys["ArrowUp"]) player.y -= player.speed;
       if (keys["ArrowDown"]) player.y += player.speed;
 
-      // 弾の移動
       for (let b of bullets) {
         b.y += b.speed;
+        if (
+          player.x < b.x + b.size &&
+          player.x + player.width > b.x &&
+          player.y < b.y + b.size &&
+          player.y + player.height > b.y
+        ) {
+          player.hp -= 1;
+        }
       }
 
-      // 弾が画面外なら削除
       for (let i = bullets.length - 1; i >= 0; i--) {
         if (bullets[i].y > canvas.height) bullets.splice(i, 1);
       }
     }
 
     function drawUI() {
-      // HPバー
       ctx.fillStyle = "white";
       ctx.fillRect(20, 20, 100, 10);
       ctx.fillStyle = "red";
-      ctx.fillRect(20, 20, 70, 10); // 仮のHP70%
+      ctx.fillRect(20, 20, player.hp, 10);
       ctx.strokeStyle = "white";
       ctx.strokeRect(20, 20, 100, 10);
 
-      // メニュー文字（仮）
       ctx.font = "16px Courier New";
       ctx.fillText("FIGHT  ACT  ITEM  MERCY", 200, 460);
+
+      ctx.fillStyle = "white";
+      ctx.fillRect(50, 350, 540, 40);
+      ctx.fillStyle = "black";
+      ctx.font = "14px Courier New";
+      ctx.fillText("* Gaster: You can't dodge this forever...", 60, 375);
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawUI();
 
-      // プレイヤー
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
 
-      // 弾
-      ctx.fillStyle = "white";
       for (let b of bullets) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
-        ctx.fill();
+        if (b.type === "bone") {
+          ctx.drawImage(boneImg, b.x, b.y, b.size, b.size);
+        } else {
+          ctx.drawImage(gasterImg, b.x, b.y, b.size, b.size);
+        }
       }
     }
 
@@ -104,7 +127,7 @@
     window.addEventListener("keydown", e => keys[e.key] = true);
     window.addEventListener("keyup", e => keys[e.key] = false);
 
-    setInterval(spawnBullet, 500);
+    setInterval(spawnBullet, 800);
     gameLoop();
   </script>
 </body>
