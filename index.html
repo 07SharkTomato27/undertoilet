@@ -106,10 +106,19 @@ let showDialogue = false;
     const charaImg = new Image();
     charaImg.src = "assets/chara.png";
 
-    function startGame() {$1dialogueIndex = 0;
-      showDialogue = true;
-      showDialogue = true;
-    }
+    function startGame() {
+  titleScreen.style.display = "none";
+  player.hp = 100;
+  player.alive = true;
+  player.x = 320;
+  player.y = 400;
+  bullets.length = 0;
+  bgm.currentTime = 0;
+  bgm.play();
+  retryBtn.style.display = "none";
+  dialogueIndex = 0;
+  showDialogue = true;
+}
 
     function spawnBullet() {
       if (!player.alive) return;
