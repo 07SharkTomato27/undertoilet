@@ -86,6 +86,13 @@
       alive: false
     };
 
+    let dialogueIndex = 0;
+    const dialogues = [
+      "* Gaster: You can't dodge this forever...",
+      "* Gaster: Feel the pain of the void.",
+      "* Gaster: Your timeline is ending..."
+    ];
+
     const bullets = [];
     const boneImg = new Image();
     boneImg.src = "assets/bone.png";
@@ -106,6 +113,7 @@
       bgm.currentTime = 0;
       bgm.play();
       retryBtn.style.display = "none";
+      dialogueIndex = 0;
     }
 
     function spawnBullet() {
@@ -163,15 +171,19 @@
       ctx.font = "16px Courier New";
       ctx.fillText("FIGHT  ACT  ITEM  MERCY", 200, 460);
 
-      ctx.fillStyle = "white";
-      ctx.fillRect(50, 350, 540, 40);
-      ctx.fillStyle = "black";
-      ctx.font = "14px Courier New";
-      ctx.fillText(
-        player.alive ? "* Gaster: You can't dodge this forever..." : "* Gaster: ... Pathetic.",
-        60,
-        375
-      );
+      if (dialogueIndex < dialogues.length || !player.alive) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(50, 350, 540, 40);
+        ctx.fillStyle = "black";
+        ctx.font = "14px Courier New";
+        ctx.fillText(
+          player.alive
+            ? dialogues[dialogueIndex] || ""
+            : "* Gaster: ... Pathetic.",
+          60,
+          375
+        );
+      }
     }
 
     function draw() {
@@ -202,7 +214,16 @@
     }
 
     let keys = {};
-    window.addEventListener("keydown", e => keys[e.key] = true);
+    window.addEventListener("keydown", e => {
+      keys[e.key] = true;
+      if (e.key === "z" || e.key === "Z") {
+        if (player.alive && dialogueIndex < dialogues.length - 1) {
+          dialogueIndex++;
+        } else if (player.alive && dialogueIndex >= dialogues.length - 1) {
+          dialogueIndex = dialogues.length;
+        }
+      }
+    });
     window.addEventListener("keyup", e => keys[e.key] = false);
 
     startBtn.onclick = startGame;
