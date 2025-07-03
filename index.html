@@ -136,6 +136,7 @@ let showDialogue = false;
     function update() {
       if (!player.alive) return;
 
+      // セリフ中の処理
       if (showDialogue) {
         if (justPressedZ) {
           dialogueIndex++;
@@ -144,7 +145,35 @@ let showDialogue = false;
           }
         }
         justPressedZ = false;
-        return;
+        // セリフ中でもここで return しない
+      } else {
+        if (keys["ArrowLeft"]) player.x -= player.speed;
+        if (keys["ArrowRight"]) player.x += player.speed;
+        if (keys["ArrowUp"]) player.y -= player.speed;
+        if (keys["ArrowDown"]) player.y += player.speed;
+
+        for (let b of bullets) {
+          b.y += b.speed;
+          if (
+            player.x < b.x + b.size &&
+            player.x + player.width > b.x &&
+            player.y < b.y + b.size &&
+            player.y + player.height > b.y
+          ) {
+            player.hp -= 1;
+            if (player.hp <= 0) {
+              player.hp = 0;
+              player.alive = false;
+              bgm.pause();
+              retryBtn.style.display = "block";
+            }
+          }
+        }
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          if (bullets[i].y > canvas.height) bullets.splice(i, 1);
+        }
+      }
       }
 
       if (keys["ArrowLeft"]) player.x -= player.speed;
