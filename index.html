@@ -10,7 +10,7 @@
       background-color: black;
       color: white;
       font-family: 'Courier New', Courier, monospace;
-      cursor: url("assets/cursor.png"), auto;
+      cursor: auto;
     }
     canvas {
       display: block;
@@ -89,6 +89,8 @@
     };
 
     let dialogueIndex = 0;
+      showDialogue = true;
+let showDialogue = true;
     const dialogues = [
       "* Gaster: You can't dodge this forever...",
       "* Gaster: Feel the pain of the void.",
@@ -173,7 +175,7 @@
       ctx.font = "16px Courier New";
       ctx.fillText("FIGHT  ACT  ITEM  MERCY", 200, 460);
 
-      if (dialogueIndex < dialogues.length || !player.alive) {
+      if ((showDialogue && dialogueIndex < dialogues.length) || !player.alive) {
         ctx.fillStyle = "white";
         ctx.fillRect(50, 350, 540, 40);
         ctx.fillStyle = "black";
@@ -218,10 +220,12 @@
     let keys = {};
     window.addEventListener("keydown", e => {
       keys[e.key] = true;
-      if (e.key === "z" || e.key === "Z") {
-        if (player.alive && dialogueIndex < dialogues.length - 1) {
-          dialogueIndex++;
-        } else if (player.alive && dialogueIndex >= dialogues.length - 1) {
+      if ((e.key === "z" || e.key === "Z") && showDialogue) {
+        dialogueIndex++;
+        if (dialogueIndex >= dialogues.length) {
+          showDialogue = false;
+        }
+      } else if (player.alive && dialogueIndex >= dialogues.length - 1) {
           dialogueIndex = dialogues.length;
         }
       }
