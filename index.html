@@ -259,9 +259,8 @@ let showDialogue = false;
     window.addEventListener("keydown", e => {
       keys[e.key] = true;
       if ((e.key === "z" || e.key === "Z") && showDialogue) {
-        if (dialogueIndex < dialogues.length - 1) {
-          dialogueIndex++;
-        } else {
+        dialogueIndex++;
+        if (dialogueIndex >= dialogues.length) {
           showDialogue = false;
         }
       }
