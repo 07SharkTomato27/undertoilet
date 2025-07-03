@@ -206,25 +206,27 @@ let showDialogue = false;
       const menuOptions = ["FIGHT", "ACT", "ITEM", "MERCY"];
       const selectorIndex = 0; // you can make this changeable later
 
-      ctx.font = "16px Courier New";
-      ctx.fillStyle = "white";
-
       let offsetX = 0;
       for (let i = 0; i < menuOptions.length; i++) {
         const text = menuOptions[i];
         const textWidth = ctx.measureText(text).width;
         const x = menuX + offsetX;
-        // draw texture-based menu option
         const img = new Image();
-        img.src = `assets/menu_${text.toLowerCase()}.png`;
-        ctx.drawImage(img, x, menuY - 14, img.width, img.height);
+        const selected = i === selectorIndex;
+        img.src = selected
+          ? `assets/menu_${text.toLowerCase()}_selected.png`
+          : `assets/menu_${text.toLowerCase()}.png`;
 
-        // draw selector for selected option
-        if (i === selectorIndex) {
+        ctx.drawImage(img, x, menuY - 14);
+
+        if (selected) {
+          ctx.fillStyle = "white";
+          ctx.font = "16px Courier New";
           ctx.fillText("▶", x - 16, menuY);
         }
 
-        offsetX += textWidth + 30;
+        offsetX += 90; // spacing adjusted to prevent overlap
+      }
       }
 
       if ((showDialogue && dialogueIndex < dialogues.length) || !player.alive) {
