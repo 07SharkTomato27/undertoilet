@@ -89,7 +89,7 @@
     };
 
     let dialogueIndex = 0;
-let showDialogue = true;
+let showDialogue = false;
     const dialogues = [
       "* Gaster: You can't dodge this forever...",
       "* Gaster: Feel the pain of the void.",
@@ -106,17 +106,8 @@ let showDialogue = true;
     const charaImg = new Image();
     charaImg.src = "assets/chara.png";
 
-    function startGame() {
-      titleScreen.style.display = "none";
-      player.hp = 100;
-      player.alive = true;
-      player.x = 320;
-      player.y = 400;
-      bullets.length = 0;
-      bgm.currentTime = 0;
-      bgm.play();
-      retryBtn.style.display = "none";
-      dialogueIndex = 0;
+    function startGame() {$1dialogueIndex = 0;
+      showDialogue = true;
       showDialogue = true;
     }
 
@@ -166,23 +157,52 @@ let showDialogue = true;
 
     function drawUI() {
       // UNDERTALE-style HP bar
+      const hpX = 460; // right-aligned position like in UNDERTALE
+      const hpY = 420;
+
       ctx.fillStyle = "black";
-      ctx.fillRect(20, 20, 104, 14); // border background
+      ctx.fillRect(hpX - 2, hpY - 2, 104 + 4, 14 + 4); // border background
 
       ctx.fillStyle = "white";
-      ctx.fillRect(22, 22, 100, 10); // white base
+      ctx.fillRect(hpX, hpY, 100, 10); // white base
 
       ctx.fillStyle = "#FF4040";
-      ctx.fillRect(22, 22, player.hp, 10); // red HP fill
+      ctx.fillRect(hpX, hpY, player.hp, 10); // red HP fill
 
       ctx.strokeStyle = "black";
-      ctx.strokeRect(22, 22, 100, 10); // inner stroke
+      ctx.strokeRect(hpX, hpY, 100, 10); // inner stroke
 
       ctx.strokeStyle = "white";
-      ctx.strokeRect(20, 20, 104, 14); // outer stroke
+      ctx.strokeRect(hpX - 2, hpY - 2, 104 + 4, 14 + 4); // outer stroke
+
+      ctx.fillStyle = "white";
+      ctx.font = "12px Courier New";
+      ctx.fillText("HP", hpX - 25, hpY + 10); // outer stroke
 
       ctx.font = "16px Courier New";
-      ctx.fillText("FIGHT  ACT  ITEM  MERCY", 200, 460);
+      // draw menu with selector
+      const menuX = 120;
+      const menuY = 440;
+      const menuOptions = ["FIGHT", "ACT", "ITEM", "MERCY"];
+      const selectorIndex = 0; // you can make this changeable later
+
+      ctx.font = "16px Courier New";
+      ctx.fillStyle = "white";
+
+      let offsetX = 0;
+      for (let i = 0; i < menuOptions.length; i++) {
+        const text = menuOptions[i];
+        const textWidth = ctx.measureText(text).width;
+        const x = menuX + offsetX;
+        ctx.fillText(text, x, menuY);
+
+        // draw selector for selected option
+        if (i === selectorIndex) {
+          ctx.fillText("▶", x - 16, menuY);
+        }
+
+        offsetX += textWidth + 30;
+      }
 
       if ((showDialogue && dialogueIndex < dialogues.length) || !player.alive) {
         ctx.fillStyle = "white";
