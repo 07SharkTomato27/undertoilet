@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My AU Fight</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background-color: #000;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="640" height="480"></canvas>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const player = {
+      x: 320,
+      y: 400,
+      width: 20,
+      height: 20,
+      color: "white",
+      speed: 4
+    };
+
+    const bullets = [];
+
+    function spawnBullet() {
+      const bullet = {
+        x: Math.random() * 600 + 20,
+        y: -10,
+        size: 10,
+        speed: 2 + Math.random() * 2
+      };
+      bullets.push(bullet);
+    }
+
+    function update() {
+      // 移動処理
+      if (keys["ArrowLeft"]) player.x -= player.speed;
+      if (keys["ArrowRight"]) player.x += player.speed;
+      if (keys["ArrowUp"]) player.y -= player.speed;
+      if (keys["ArrowDown"]) player.y += player.speed;
+
+      // 弾の移動
+      for (let b of bullets) {
+        b.y += b.speed;
+      }
+
+      // 弾が画面外なら削除
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        if (bullets[i].y > canvas.height) bullets.splice(i, 1);
+      }
+    }
+
+    function drawUI() {
+      // HPバー
+      ctx.fillStyle = "white";
+      ctx.fillRect(20, 20, 100, 10);
+      ctx.fillStyle = "red";
+      ctx.fillRect(20, 20, 70, 10); // 仮のHP70%
+      ctx.strokeStyle = "white";
+      ctx.strokeRect(20, 20, 100, 10);
+
+      // メニュー文字（仮）
+      ctx.font = "16px Courier New";
+      ctx.fillText("FIGHT  ACT  ITEM  MERCY", 200, 460);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawUI();
+
+      // プレイヤー
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // 弾
+      ctx.fillStyle = "white";
+      for (let b of bullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    let keys = {};
+    window.addEventListener("keydown", e => keys[e.key] = true);
+    window.addEventListener("keyup", e => keys[e.key] = false);
+
+    setInterval(spawnBullet, 500);
+    gameLoop();
+  </script>
+</body>
+</html>
