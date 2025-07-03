@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>fight</title>
+  <title>My AU Fight</title>
   <style>
     body {
       margin: 0;
@@ -16,18 +16,64 @@
       background-color: #000;
       image-rendering: pixelated;
     }
+    #retryBtn {
+      position: absolute;
+      left: 50%;
+      top: 60%;
+      transform: translate(-50%, -50%);
+      padding: 10px 20px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 20px;
+      background: #222;
+      color: white;
+      border: 2px solid white;
+      display: none;
+      cursor: pointer;
+    }
+    #titleScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    #titleScreen h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    #startBtn {
+      padding: 10px 20px;
+      font-size: 20px;
+      background: #222;
+      color: white;
+      border: 2px solid white;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <div id="titleScreen">
+    <h1>My AU Fight</h1>
+    <button id="startBtn">START</button>
+  </div>
   <canvas id="game" width="640" height="480"></canvas>
+  <button id="retryBtn">RETRY</button>
   <script>
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
+    const titleScreen = document.getElementById("titleScreen");
+    const startBtn = document.getElementById("startBtn");
+    const retryBtn = document.getElementById("retryBtn");
 
     const bgm = new Audio("assets/bgm.mp3");
     bgm.loop = true;
     bgm.volume = 0.5;
-    bgm.play();
 
     const player = {
       x: 320,
@@ -36,7 +82,8 @@
       height: 20,
       color: "white",
       speed: 4,
-      hp: 100
+      hp: 100,
+      alive: false
     };
 
     const bullets = [];
@@ -49,7 +96,20 @@
     const charaImg = new Image();
     charaImg.src = "assets/chara.png";
 
+    function startGame() {
+      titleScreen.style.display = "none";
+      player.hp = 100;
+      player.alive = true;
+      player.x = 320;
+      player.y = 400;
+      bullets.length = 0;
+      bgm.currentTime = 0;
+      bgm.play();
+      retryBtn.style.display = "none";
+    }
+
     function spawnBullet() {
+      if (!player.alive) return;
       const type = Math.random() < 0.5 ? "bone" : "gaster";
       const bullet = {
         x: Math.random() * 600 + 20,
@@ -62,6 +122,8 @@
     }
 
     function update() {
+      if (!player.alive) return;
+
       if (keys["ArrowLeft"]) player.x -= player.speed;
       if (keys["ArrowRight"]) player.x += player.speed;
       if (keys["ArrowUp"]) player.y -= player.speed;
@@ -76,6 +138,12 @@
           player.y + player.height > b.y
         ) {
           player.hp -= 1;
+          if (player.hp <= 0) {
+            player.hp = 0;
+            player.alive = false;
+            bgm.pause();
+            retryBtn.style.display = "block";
+          }
         }
       }
 
@@ -99,14 +167,24 @@
       ctx.fillRect(50, 350, 540, 40);
       ctx.fillStyle = "black";
       ctx.font = "14px Courier New";
-      ctx.fillText("* Gaster: You can't dodge this forever...", 60, 375);
+      ctx.fillText(
+        player.alive ? "* Gaster: You can't dodge this forever..." : "* Gaster: ... Pathetic.",
+        60,
+        375
+      );
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawUI();
 
-      ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
+      if (player.alive) {
+        ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
+      } else if (player.hp === 0) {
+        ctx.font = "40px Courier New";
+        ctx.fillStyle = "red";
+        ctx.fillText("GAME OVER", 200, 240);
+      }
 
       for (let b of bullets) {
         if (b.type === "bone") {
@@ -126,6 +204,9 @@
     let keys = {};
     window.addEventListener("keydown", e => keys[e.key] = true);
     window.addEventListener("keyup", e => keys[e.key] = false);
+
+    startBtn.onclick = startGame;
+    retryBtn.onclick = startGame;
 
     setInterval(spawnBullet, 800);
     gameLoop();
