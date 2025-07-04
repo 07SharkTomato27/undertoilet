@@ -208,14 +208,18 @@ function update(deltaTime) {
   if (showDialogue) {
     if (justPressedZ) {
       dialogueIndex++;
+      justPressedZ = false;
+
       if (dialogueIndex >= dialogues.length) {
         showDialogue = false;
         combatStarted = true;
       }
+    } else {
+      justPressedZ = false;
     }
-    justPressedZ = false;
-    return;
   }
+
+  if (!combatStarted) return;
 
   const left = useWASD ? keys["a"] || keys["A"] : keys["ArrowLeft"];
   const right = useWASD ? keys["d"] || keys["D"] : keys["ArrowRight"];
