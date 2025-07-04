@@ -60,7 +60,8 @@
   </style>
 </head>
 <body>
-  <div id="titleScreen">
+  <video id="introVideo" src="assets/intro.mp4" autoplay muted></video>
+  <div id="titleScreen" style="display: none;">
     <h1>My AU Fight</h1>
     <button id="startBtn">START</button>
   </div>
@@ -72,6 +73,7 @@
     const titleScreen = document.getElementById("titleScreen");
     const startBtn = document.getElementById("startBtn");
     const retryBtn = document.getElementById("retryBtn");
+const introVideo = document.getElementById("introVideo");
 
     const bgm = new Audio("assets/bgm.mp3");
     bgm.loop = true;
@@ -329,12 +331,29 @@ let justPressedZ = false;
     window.addEventListener("keyup", e => keys[e.key] = false);
 
     startBtn.addEventListener("click", () => {
-      startGame();
-    });
+  titleScreen.style.display = "none";
+  startGame();
+});
     retryBtn.onclick = startGame;
 
     setInterval(spawnBullet, 800);
-    gameLoop();
+    let videoSkipped = false;
+function endIntro() {
+  if (!videoSkipped) {
+    introVideo.style.display = "none";
+    titleScreen.style.display = "flex";
+    videoSkipped = true;
+  }
+}
+introVideo.addEventListener("ended", endIntro);
+window.addEventListener("keydown", (e) => {
+  if ((e.key === "z" || e.key === "Z") && !videoSkipped) {
+    introVideo.pause();
+    endIntro();
+  }
+});
+
+gameLoop();
   </script>
 </body>
 </html>
