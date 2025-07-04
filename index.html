@@ -1,202 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Debug AU Fight</title>
-<style>
-  body { margin:0; background:black; color:white; font-family: monospace; }
-  canvas { display:block; margin:auto; background:#000; image-rendering: pixelated; }
-  #retryBtn, #titleScreen { font-family: monospace; }
-  #retryBtn { position:absolute; top:60%; left:50%; transform:translate(-50%, -50%); padding:10px 20px; font-size:20px; background:#222; border:2px solid white; cursor:pointer; display:none; }
-  #titleScreen { position:absolute; top:0; left:0; width:100vw; height:100vh; background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-  #startBtn { padding:10px 20px; font-size:20px; background:#222; border:2px solid white; cursor:pointer; color:white; }
-</style>
+  <meta charset="UTF-8" />
+  <title>AU Fight with WASD Mode</title>
+  <style>
+    body { margin:0; background:black; color:white; font-family: monospace; }
+    canvas { display:block; margin:auto; background:#000; image-rendering: pixelated; }
+    #retryBtn, #titleScreen { font-family: monospace; }
+    #retryBtn {
+      position:absolute; top:60%; left:50%;
+      transform:translate(-50%, -50%);
+      padding:10px 20px; font-size:20px;
+      background:#222; border:2px solid white;
+      cursor:pointer; display:none;
+    }
+    #titleScreen {
+      position:absolute; top:0; left:0;
+      width:100vw; height:100vh; background:black;
+      display:flex; flex-direction:column;
+      justify-content:center; align-items:center;
+    }
+    #startBtn {
+      padding:10px 20px; font-size:20px;
+      background:#222; border:2px solid white;
+      cursor:pointer; color:white;
+    }
+    #wasdToggleLabel {
+      margin-top:20px;
+      font-size:16px;
+      user-select: none;
+    }
+    #wasdCheckbox {
+      transform: scale(1.3);
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
-<div id="titleScreen">
-  <h1>Debug AU Fight</h1>
-  <button id="startBtn">START</button>
-</div>
-<canvas id="game" width="640" height="480"></canvas>
-<button id="retryBtn">RETRY</button>
+  <div id="titleScreen">
+    <h1>AU Fight</h1>
+    <button id="startBtn">START</button>
+    <label id="wasdToggleLabel">
+      <input type="checkbox" id="wasdCheckbox" />
+      WASD モード
+    </label>
+  </div>
 
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const titleScreen = document.getElementById("titleScreen");
-const startBtn = document.getElementById("startBtn");
-const retryBtn = document.getElementById("retryBtn");
+  <canvas id="game" width="640" height="480"></canvas>
+  <button id="retryBtn">RETRY</button>
 
-const player = {
-  x: 320, y: 400, width: 20, height: 20,
-  speed: 4, hp: 100,
-  alive: false,
-  invincible: false,
-  invincibleTimer: 0,
-};
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const titleScreen = document.getElementById("titleScreen");
+    const startBtn = document.getElementById("startBtn");
+    const retryBtn = document.getElementById("retryBtn");
+    const wasdCheckbox = document.getElementById("wasdCheckbox");
 
-const bullets = [];
-const dialogues = [
-  "* Gaster: You can't dodge this forever...",
-  "* Gaster: Feel the pain of the void.",
-  "* Gaster: Your timeline is ending..."
-];
-let dialogueIndex = 0;
-let showDialogue = false;
-let keys = {};
-let justPressedZ = false;
-let lastTime = 0;
+    const player = {
+      x: 320, y: 400, width: 20, height: 20,
+      speed: 4, hp: 100,
+      alive: false,
+      invincible: false,
+      invincibleTimer: 0,
+    };
 
-window.addEventListener("keydown", e => {
-  if (!keys[e.key]) keys[e.key] = true;
-  if ((e.key === "z" || e.key === "Z") && showDialogue) justPressedZ = true;
-});
-window.addEventListener("keyup", e => keys[e.key] = false);
+    const bullets = [];
+    const dialogues = [
+      "* Gaster: You can't dodge this forever...",
+      "* Gaster: Feel the pain of the void.",
+      "* Gaster: Your timeline is ending..."
+    ];
+    let dialogueIndex = 0;
+    let showDialogue = false;
+    let keys = {};
+    let justPressedZ = false;
+    let lastTime = 0;
+    let useWASD = false;
 
-function clamp(val, min, max) { return Math.min(Math.max(val, min), max); }
+    window.addEventListener("keydown", e => {
+      if (!keys[e.key]) keys[e.key] = true;
+      if ((e.key === "z" || e.key === "Z") && showDialogue) justPressedZ = true;
+    });
 
-function spawnBullet() {
-  if (!player.alive || showDialogue) return;
-  bullets.push({
-    x: Math.random() * (canvas.width - 30),
-    y: -30,
-    size: 30,
-    speed: 2 + Math.random() * 2,
-  });
-}
+    window.addEventListener("keyup", e => keys[e.key] = false);
 
-function update(deltaTime) {
-  if (!player.alive) return;
-
-  if (showDialogue) {
-    if (justPressedZ) {
-      dialogueIndex++;
-      justPressedZ = false;
-      if (dialogueIndex >= dialogues.length) {
-        showDialogue = false;
-      }
-    }
-  } else {
-    if (keys["ArrowLeft"]) player.x -= player.speed;
-    if (keys["ArrowRight"]) player.x += player.speed;
-    if (keys["ArrowUp"]) player.y -= player.speed;
-    if (keys["ArrowDown"]) player.y += player.speed;
-
-    player.x = clamp(player.x, 0, canvas.width - player.width);
-    player.y = clamp(player.y, 0, canvas.height - player.height);
-
-    if (player.invincible) {
-      player.invincibleTimer -= deltaTime;
-      if (player.invincibleTimer <= 0) {
-        player.invincible = false;
-        player.invincibleTimer = 0;
-      }
+    function clamp(val, min, max) {
+      return Math.min(Math.max(val, min), max);
     }
 
-    for (let i = bullets.length - 1; i >= 0; i--) {
-      const b = bullets[i];
-      b.y += b.speed;
+    function spawnBullet() {
+      if (!player.alive || showDialogue) return;
+      bullets.push({
+        x: Math.random() * (canvas.width - 30),
+        y: -30,
+        size: 30,
+        speed: 2 + Math.random() * 2,
+      });
+    }
 
-      if (!player.invincible) {
-        if (
-          player.x < b.x + b.size &&
-          player.x + player.width > b.x &&
-          player.y < b.y + b.size &&
-          player.y + player.height > b.y
-        ) {
-          player.hp -= 10;
-          player.invincible = true;
-          player.invincibleTimer = 500;
+    function update(deltaTime) {
+      if (!player.alive) return;
 
-          if (player.hp <= 0) {
-            player.hp = 0;
-            player.alive = false;
-            retryBtn.style.display = "block";
+      if (showDialogue) {
+        if (justPressedZ) {
+          dialogueIndex++;
+          justPressedZ = false;
+          if (dialogueIndex >= dialogues.length) showDialogue = false;
+        }
+      } else {
+        const up = useWASD ? keys["w"] || keys["W"] : keys["ArrowUp"];
+        const down = useWASD ? keys["s"] || keys["S"] : keys["ArrowDown"];
+        const left = useWASD ? keys["a"] || keys["A"] : keys["ArrowLeft"];
+        const right = useWASD ? keys["d"] || keys["D"] : keys["ArrowRight"];
+
+        if (left) player.x -= player.speed;
+        if (right) player.x += player.speed;
+        if (up) player.y -= player.speed;
+        if (down) player.y += player.speed;
+
+        player.x = clamp(player.x, 0, canvas.width - player.width);
+        player.y = clamp(player.y, 0, canvas.height - player.height);
+
+        if (player.invincible) {
+          player.invincibleTimer -= deltaTime;
+          if (player.invincibleTimer <= 0) {
+            player.invincible = false;
+            player.invincibleTimer = 0;
           }
         }
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const b = bullets[i];
+          b.y += b.speed;
+
+          if (!player.invincible &&
+              player.x < b.x + b.size &&
+              player.x + player.width > b.x &&
+              player.y < b.y + b.size &&
+              player.y + player.height > b.y
+          ) {
+            player.hp -= 10;
+            player.invincible = true;
+            player.invincibleTimer = 500;
+            if (player.hp <= 0) {
+              player.hp = 0;
+              player.alive = false;
+              retryBtn.style.display = "block";
+            }
+          }
+
+          if (b.y > canvas.height) bullets.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // プレイヤー
+      ctx.fillStyle = player.invincible ? "rgba(255,255,255,0.5)" : "white";
+      if (player.alive) ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // 弾
+      ctx.fillStyle = "cyan";
+      for (const b of bullets) ctx.fillRect(b.x, b.y, b.size, b.size);
+
+      // HPバー
+      ctx.fillStyle = "white";
+      ctx.fillRect(460, 380, 100, 14);
+      ctx.fillStyle = "red";
+      ctx.fillRect(460, 380, player.hp, 14);
+      ctx.strokeStyle = "black";
+      ctx.strokeRect(460, 380, 100, 14);
+      ctx.fillStyle = "white";
+      ctx.font = "12px monospace";
+      ctx.fillText("HP", 430, 390);
+
+      // セリフ
+      if (showDialogue && dialogueIndex < dialogues.length) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(50, 350, 540, 40);
+        ctx.fillStyle = "black";
+        ctx.font = "14px monospace";
+        ctx.fillText(dialogues[dialogueIndex], 60, 375);
       }
 
-      if (b.y > canvas.height) bullets.splice(i, 1);
+      // ゲームオーバー
+      if (!player.alive) {
+        ctx.fillStyle = "red";
+        ctx.font = "40px monospace";
+        ctx.fillText("GAME OVER", 200, 240);
+      }
     }
-  }
-}
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function gameLoop(timestamp = 0) {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
 
-  // player
-  ctx.fillStyle = player.invincible ? "rgba(255,255,255,0.5)" : "white";
-  if (player.alive) ctx.fillRect(player.x, player.y, player.width, player.height);
+      update(deltaTime);
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
 
-  // bullets
-  ctx.fillStyle = "cyan";
-  for (const b of bullets) {
-    ctx.fillRect(b.x, b.y, b.size, b.size);
-  }
+    function startGame() {
+      useWASD = wasdCheckbox.checked; // ← チェック状態を使う
+      player.hp = 100;
+      player.alive = true;
+      player.invincible = false;
+      player.invincibleTimer = 0;
+      player.x = 320;
+      player.y = 400;
+      bullets.length = 0;
+      dialogueIndex = 0;
+      showDialogue = true;
+      retryBtn.style.display = "none";
+      lastTime = 0;
+      requestAnimationFrame(gameLoop);
+    }
 
-  // HP bar
-  ctx.fillStyle = "white";
-  ctx.fillRect(460, 380, 100, 14);
-  ctx.fillStyle = "red";
-  ctx.fillRect(460, 380, player.hp, 14);
-  ctx.strokeStyle = "black";
-  ctx.strokeRect(460, 380, 100, 14);
-  ctx.fillStyle = "white";
-  ctx.font = "12px monospace";
-  ctx.fillText("HP", 430, 390);
+    startBtn.addEventListener("click", () => {
+      titleScreen.style.display = "none";
+      startGame();
+    });
 
-  // Dialogue box
-  if (showDialogue && dialogueIndex < dialogues.length) {
-    ctx.fillStyle = "white";
-    ctx.fillRect(50, 350, 540, 40);
-    ctx.fillStyle = "black";
-    ctx.font = "14px monospace";
-    ctx.fillText(dialogues[dialogueIndex], 60, 375);
-  }
+    retryBtn.addEventListener("click", () => startGame());
 
-  if (!player.alive) {
-    ctx.fillStyle = "red";
-    ctx.font = "40px monospace";
-    ctx.fillText("GAME OVER", 200, 240);
-  }
-}
-
-function gameLoop(timestamp = 0) {
-  if (!lastTime) lastTime = timestamp;
-  const deltaTime = timestamp - lastTime;
-  lastTime = timestamp;
-
-  update(deltaTime);
-  draw();
-
-  requestAnimationFrame(gameLoop);
-}
-
-function startGame() {
-  player.hp = 100;
-  player.alive = true;
-  player.invincible = false;
-  player.invincibleTimer = 0;
-  player.x = 320;
-  player.y = 400;
-  bullets.length = 0;
-  dialogueIndex = 0;
-  showDialogue = true;
-  retryBtn.style.display = "none";
-  lastTime = 0;
-  requestAnimationFrame(gameLoop);
-}
-
-startBtn.addEventListener("click", () => {
-  titleScreen.style.display = "none";
-  startGame();
-});
-
-retryBtn.addEventListener("click", () => {
-  startGame();
-});
-
-setInterval(spawnBullet, 800);
-</script>
+    setInterval(spawnBullet, 800);
+  </script>
 </body>
 </html>
