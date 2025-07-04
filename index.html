@@ -182,11 +182,13 @@
       if (showDialogue) {
         if (justPressedZ) {
           dialogueIndex++;
+          console.log("Dialogue index:", dialogueIndex, "/", dialogues.length);
           if (dialogueIndex >= dialogues.length) {
             showDialogue = false;
+            console.log("Dialogue ended, resuming game");
           }
+          justPressedZ = false;
         }
-        justPressedZ = false;
       } else {
         // プレイヤー移動
         if (keys["ArrowLeft"]) player.x -= player.speed;
@@ -236,15 +238,12 @@
           }
         }
       }
-
-      // justPressedZはupdateで必ずリセット
-      if (showDialogue === false) justPressedZ = false;
     }
 
     function drawUI() {
       // HPバー
       const hpX = 460;
-      const hpY = 380; // ← 420から380に上に移動しました
+      const hpY = 380; // 上に移動済み
 
       ctx.fillStyle = "black";
       ctx.fillRect(hpX - 2, hpY - 2, 108, 18);
