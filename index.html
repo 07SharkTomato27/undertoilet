@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Debug AU Fight</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
   <style>
     body {
       margin: 0;
@@ -43,6 +44,17 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      z-index: 10;
+    }
+    #introVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      background: black;
+      z-index: 20;
     }
     #startBtn {
       padding: 10px 20px;
@@ -65,7 +77,8 @@
   </style>
 </head>
 <body>
-<div id="titleScreen">
+<video id="introVideo" src="assets/intro.mp4" autoplay muted></video>
+<div id="titleScreen" style="display: none;">
   <h1>Debug AU Fight</h1>
   <button id="startBtn">START</button>
   <label id="wasdToggleLabel">
@@ -83,6 +96,25 @@ const titleScreen = document.getElementById("titleScreen");
 const startBtn = document.getElementById("startBtn");
 const retryBtn = document.getElementById("retryBtn");
 const wasdCheckbox = document.getElementById("wasdCheckbox");
+const introVideo = document.getElementById("introVideo");
+
+let videoSkipped = false;
+
+function endIntro() {
+  if (!videoSkipped) {
+    introVideo.style.display = "none";
+    titleScreen.style.display = "flex";
+    videoSkipped = true;
+  }
+}
+
+introVideo.addEventListener("ended", endIntro);
+window.addEventListener("keydown", (e) => {
+  if ((e.key === "z" || e.key === "Z") && !videoSkipped) {
+    introVideo.pause();
+    endIntro();
+  }
+});
 
 const player = {
   x: 320, y: 400, width: 20, height: 20,
