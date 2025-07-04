@@ -168,10 +168,6 @@ window.addEventListener("keydown", e => {
 });
 window.addEventListener("keyup", e => keys[e.key] = false);
 
-const bgm = new Audio("assets/bgm.mp3");
-bgm.loop = true;
-bgm.volume = 0.5;
-
 function clamp(val, min, max) {
   return Math.min(Math.max(val, min), max);
 }
@@ -189,8 +185,6 @@ function startGame() {
   dialogueIndex = 0;
   showDialogue = true;
   lastTime = 0;
-  bgm.currentTime = 0;
-  bgm.play();
   requestAnimationFrame(gameLoop);
 }
 
@@ -213,17 +207,12 @@ function update(deltaTime) {
     if (justPressedZ) {
       dialogueIndex++;
       if (dialogueIndex >= dialogues.length) {
-        // セリフ終了後は showDialogue を false にしつつ
-        // dialogueIndex は最後のセリフ番号に固定（描画用）
-        showDialogue = false;
         dialogueIndex = dialogues.length - 1;
+        showDialogue = false;
       }
     }
     justPressedZ = false;
-    // ここで return しないことでゲームの他処理も動かす
-  }
-
-  if (!showDialogue) {
+  } else {
     const left = useWASD ? keys["a"] || keys["A"] : keys["ArrowLeft"];
     const right = useWASD ? keys["d"] || keys["D"] : keys["ArrowRight"];
     const up = useWASD ? keys["w"] || keys["W"] : keys["ArrowUp"];
@@ -250,10 +239,10 @@ function update(deltaTime) {
       b.y += b.speed;
 
       if (!player.invincible &&
-          player.x < b.x + b.size &&
-          player.x + player.width > b.x &&
-          player.y < b.y + b.size &&
-          player.y + player.height > b.y) {
+        player.x < b.x + b.size &&
+        player.x + player.width > b.x &&
+        player.y < b.y + b.size &&
+        player.y + player.height > b.y) {
         player.hp -= 10;
         player.invincible = true;
         player.invincibleTimer = 500;
@@ -261,7 +250,6 @@ function update(deltaTime) {
           player.hp = 0;
           player.alive = false;
           retryBtn.style.display = "block";
-          bgm.pause();
         }
       }
       if (b.y > canvas.height) bullets.splice(i, 1);
@@ -271,7 +259,6 @@ function update(deltaTime) {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   if (player.alive) {
     ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
     if (player.invincible) {
@@ -279,13 +266,10 @@ function draw() {
       ctx.fillRect(player.x, player.y, player.width, player.height);
     }
   }
-
   for (let b of bullets) {
     const img = b.type === "bone" ? boneImg : gasterImg;
     ctx.drawImage(img, b.x, b.y, b.size, b.size);
   }
-
-  // HPバーとメニューは常に表示
   const hpX = 460, hpY = 420;
   ctx.fillStyle = "white";
   ctx.fillRect(hpX, hpY, 100, 14);
@@ -310,16 +294,16 @@ function draw() {
     offsetX += 90;
   }
 
-  // セリフ表示中のみ下にセリフを表示する
-  if (showDialogue && dialogueIndex < dialogues.length) {
+  if ((showDialogue && dialogueIndex < dialogues.length) || !player.alive) {
     ctx.fillStyle = "white";
     ctx.fillRect(50, 350, 540, 40);
     ctx.fillStyle = "black";
     ctx.font = "14px monospace";
-    ctx.fillText(dialogues[dialogueIndex], 60, 375);
+    const dialogueText = player.alive
+      ? (dialogues[dialogueIndex] || "")
+      : "* Gaster: ... Pathetic.";
+    ctx.fillText(dialogueText, 60, 375);
   }
-
-  // プレイヤー死亡時の表示
   if (!player.alive) {
     ctx.fillStyle = "red";
     ctx.font = "40px monospace";
