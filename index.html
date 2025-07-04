@@ -199,15 +199,15 @@ function update(deltaTime) {
 
   if (showDialogue) {
     if (justPressedZ) {
-      dialogueIndex++;
       justPressedZ = false;
-      if (dialogueIndex >= dialogues.length) {
+      if (dialogueIndex + 1 >= dialogues.length) {
         showDialogue = false;
         combatStarted = true;
+      } else {
+        dialogueIndex++;
       }
-    } else {
-      justPressedZ = false;
     }
+    return;
   }
 
   if (!combatStarted) return;
@@ -279,7 +279,9 @@ function draw() {
   }
   for (let b of bullets) {
     const img = b.type === "bone" ? boneImg : gasterImg;
-    ctx.drawImage(img, b.x, b.y, b.size, b.size);
+    if (!isNaN(b.x) && !isNaN(b.y)) {
+      ctx.drawImage(img, b.x, b.y, b.size, b.size);
+    }
   }
 
   if (player.alive && combatStarted) {
@@ -314,7 +316,7 @@ function draw() {
     ctx.fillStyle = "black";
     ctx.font = "14px monospace";
     const dialogueText = player.alive
-      ? (dialogues[dialogueIndex] || "")
+      ? (dialogueIndex < dialogues.length ? dialogues[dialogueIndex] : "")
       : "* Gaster: ... Pathetic.";
     ctx.fillText(dialogueText, 60, 375);
   }
