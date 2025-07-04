@@ -91,12 +91,10 @@
     const ctx = canvas.getContext("2d");
     const retryBtn = document.getElementById("retryBtn");
 
-    // ゲームBGM
     const bgm = new Audio("assets/bgm.mp3");
     bgm.loop = true;
     bgm.volume = 0.5;
 
-    // プレイヤー設定
     const player = {
       x: 320,
       y: 400,
@@ -120,7 +118,6 @@
 
     const bullets = [];
 
-    // 画像プリロード
     const boneImg = new Image();
     boneImg.src = "assets/bone.png";
 
@@ -145,7 +142,6 @@
     }
     preloadMenuImages();
 
-    // キー入力管理
     let keys = {};
     let justPressedZ = false;
 
@@ -162,12 +158,10 @@
       keys[e.key] = false;
     });
 
-    // クランプ関数
     function clamp(val, min, max) {
       return Math.min(Math.max(val, min), max);
     }
 
-    // ゲーム開始関数
     function startGame() {
       titleScreen.style.display = "none";
       player.hp = 100;
@@ -182,9 +176,10 @@
       retryBtn.style.display = "none";
       dialogueIndex = 0;
       showDialogue = true;
+      lastTime = 0;
+      requestAnimationFrame(gameLoop);
     }
 
-    // 弾生成
     function spawnBullet() {
       if (!player.alive || showDialogue) return;
       const type = Math.random() < 0.5 ? "bone" : "gaster";
@@ -198,17 +193,16 @@
       bullets.push(bullet);
     }
 
-    // 更新処理
     function update(deltaTime) {
       if (!player.alive) return;
 
       if (showDialogue) {
         if (justPressedZ) {
           dialogueIndex++;
+          justPressedZ = false;
           if (dialogueIndex >= dialogues.length) {
             showDialogue = false;
           }
-          justPressedZ = false;
         }
       } else {
         if (keys["ArrowLeft"]) player.x -= player.speed;
@@ -240,7 +234,8 @@
             ) {
               player.hp -= 1;
               player.invincible = true;
-              player.invincibleTimer = 500;
+              player.invincibleTimer = 500; // 500ms無敵
+
               if (player.hp <= 0) {
                 player.hp = 0;
                 player.alive = false;
@@ -257,7 +252,6 @@
       }
     }
 
-    // UI描画
     function drawUI() {
       const hpX = 460;
       const hpY = 380;
@@ -315,7 +309,6 @@
       }
     }
 
-    // 描画
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -343,7 +336,6 @@
       }
     }
 
-    // ゲームループ
     let lastTime = 0;
     function gameLoop(timestamp = 0) {
       const deltaTime = timestamp - lastTime;
@@ -354,32 +346,25 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // タイトル画面表示関数
-    function showTitleScreen() {
-      introVideo.style.display = "none";
-      titleScreen.style.display = "flex";
-    }
-
     // 動画終了時タイトル表示
     introVideo.addEventListener("ended", () => {
-      showTitleScreen();
+      introVideo.style.display = "none";
+      titleScreen.style.display = "flex";
     });
 
     // Zキーで動画スキップ
     window.addEventListener("keydown", (e) => {
       if ((e.key === "z" || e.key === "Z") && introVideo.style.display !== "none") {
         introVideo.pause();
-        showTitleScreen();
+        introVideo.style.display = "none";
+        titleScreen.style.display = "flex";
       }
     });
 
-    // スタートボタンでゲーム開始
     startBtn.addEventListener("click", () => {
       startGame();
-      gameLoop();
     });
 
-    // リトライボタンでゲーム再スタート
     retryBtn.addEventListener("click", () => {
       startGame();
     });
@@ -395,15 +380,11 @@
         imagesLoadedCount++;
         if (imagesLoadedCount === imagesToLoad.length) {
           // 最初は動画再生中なのでタイトル画面は非表示のまま
-          // gameLoopはスタートボタン押した時に開始
         }
       };
       img.onerror = () => {
         console.warn("画像読み込み失敗: " + img.src);
         imagesLoadedCount++;
-        if (imagesLoadedCount === imagesToLoad.length) {
-          // 同上
-        }
       };
     });
   </script>
