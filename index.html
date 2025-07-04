@@ -358,6 +358,7 @@ introVideo.addEventListener("ended", endIntro);
 window.addEventListener("keydown", (e) => {
   if ((e.key === "z" || e.key === "Z") && !videoSkipped) {
     introVideo.pause();
+    introVideo.currentTime = introVideo.duration;
     endIntro();
   }
 });
