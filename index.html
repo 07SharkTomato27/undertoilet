@@ -258,6 +258,9 @@ function update(deltaTime) {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   if (player.alive) {
     ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
     if (player.invincible) {
