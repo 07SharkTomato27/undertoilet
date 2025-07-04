@@ -46,6 +46,10 @@
       align-items: center;
       z-index: 10;
     }
+    #logoImg {
+      width: 300px;
+      margin-bottom: 20px;
+    }
     #introVideo {
       position: absolute;
       top: 0;
@@ -79,7 +83,7 @@
 <body>
 <video id="introVideo" src="assets/intro.mp4" autoplay muted></video>
 <div id="titleScreen" style="display: none;">
-  <h1>Debug AU Fight</h1>
+  <img id="logoImg" src="assets/logo.png" alt="Game Logo" />
   <button id="startBtn">START</button>
   <label id="wasdToggleLabel">
     <input type="checkbox" id="wasdCheckbox" />
@@ -88,7 +92,6 @@
 </div>
 <canvas id="game" width="640" height="480"></canvas>
 <button id="retryBtn">RETRY</button>
-
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -99,7 +102,6 @@ const wasdCheckbox = document.getElementById("wasdCheckbox");
 const introVideo = document.getElementById("introVideo");
 
 let videoSkipped = false;
-
 function endIntro() {
   if (!videoSkipped) {
     introVideo.style.display = "none";
@@ -107,7 +109,6 @@ function endIntro() {
     videoSkipped = true;
   }
 }
-
 introVideo.addEventListener("ended", endIntro);
 window.addEventListener("keydown", (e) => {
   if ((e.key === "z" || e.key === "Z") && !videoSkipped) {
@@ -117,27 +118,29 @@ window.addEventListener("keydown", (e) => {
 });
 
 const player = {
-  x: 320, y: 400, width: 20, height: 20,
-  speed: 4, hp: 100,
+  x: 320,
+  y: 400,
+  width: 20,
+  height: 20,
+  color: "white",
+  speed: 4,
+  hp: 100,
   alive: false,
   invincible: false,
-  invincibleTimer: 0,
+  invincibleTimer: 0
 };
-
+let keys = {};
+let justPressedZ = false;
+let useWASD = false;
+let dialogueIndex = 0;
+let showDialogue = false;
 const bullets = [];
 const dialogues = [
   "* Gaster: You can't dodge this forever...",
   "* Gaster: Feel the pain of the void.",
   "* Gaster: Your timeline is ending..."
 ];
-let dialogueIndex = 0;
-let showDialogue = false;
-let keys = {};
-let justPressedZ = false;
-let lastTime = 0;
-let useWASD = false;
 
-// Image assets
 const boneImg = new Image();
 boneImg.src = "assets/bone.png";
 const gasterImg = new Image();
@@ -148,30 +151,52 @@ charaImg.src = "assets/chara.png";
 const menuOptions = ["FIGHT", "ACT", "ITEM", "MERCY"];
 const menuImages = {};
 for (const option of menuOptions) {
-  const keyNormal = option.toLowerCase();
-  const keySelected = keyNormal + "_selected";
-  menuImages[keyNormal] = new Image();
-  menuImages[keyNormal].src = `assets/menu_${keyNormal}.png`;
-  menuImages[keySelected] = new Image();
-  menuImages[keySelected].src = `assets/menu_${keyNormal}_selected.png`;
+  const key = option.toLowerCase();
+  menuImages[key] = new Image();
+  menuImages[key].src = `assets/menu_${key}.png`;
+  menuImages[key + "_selected"] = new Image();
+  menuImages[key + "_selected"].src = `assets/menu_${key}_selected.png`;
 }
 
 window.addEventListener("keydown", e => {
-  if (!keys[e.key]) keys[e.key] = true;
-  if ((e.key === "z" || e.key === "Z") && showDialogue) justPressedZ = true;
+  if (!keys[e.key]) {
+    keys[e.key] = true;
+    if ((e.key === "z" || e.key === "Z") && showDialogue) {
+      justPressedZ = true;
+    }
+  }
 });
 window.addEventListener("keyup", e => keys[e.key] = false);
 
-function clamp(val, min, max) { return Math.min(Math.max(val, min), max); }
+function clamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+}
+
+function startGame() {
+  useWASD = wasdCheckbox.checked;
+  player.hp = 100;
+  player.alive = true;
+  player.x = 320;
+  player.y = 400;
+  player.invincible = false;
+  player.invincibleTimer = 0;
+  bullets.length = 0;
+  retryBtn.style.display = "none";
+  dialogueIndex = 0;
+  showDialogue = true;
+  lastTime = 0;
+  requestAnimationFrame(gameLoop);
+}
 
 function spawnBullet() {
   if (!player.alive || showDialogue) return;
+  const type = Math.random() < 0.5 ? "bone" : "gaster";
   bullets.push({
-    x: Math.random() * (canvas.width - 30),
+    x: Math.random() * (canvas.width - 40) + 20,
     y: -30,
     size: 30,
     speed: 2 + Math.random() * 2,
-    type: Math.random() < 0.5 ? "bone" : "gaster"
+    type: type
   });
 }
 
@@ -181,16 +206,16 @@ function update(deltaTime) {
   if (showDialogue) {
     if (justPressedZ) {
       dialogueIndex++;
-      justPressedZ = false;
       if (dialogueIndex >= dialogues.length) {
         showDialogue = false;
       }
     }
+    justPressedZ = false;
   } else {
-    const up = useWASD ? keys["w"] || keys["W"] : keys["ArrowUp"];
-    const down = useWASD ? keys["s"] || keys["S"] : keys["ArrowDown"];
     const left = useWASD ? keys["a"] || keys["A"] : keys["ArrowLeft"];
     const right = useWASD ? keys["d"] || keys["D"] : keys["ArrowRight"];
+    const up = useWASD ? keys["w"] || keys["W"] : keys["ArrowUp"];
+    const down = useWASD ? keys["s"] || keys["S"] : keys["ArrowDown"];
 
     if (left) player.x -= player.speed;
     if (right) player.x += player.speed;
@@ -212,25 +237,20 @@ function update(deltaTime) {
       const b = bullets[i];
       b.y += b.speed;
 
-      if (!player.invincible) {
-        if (
-          player.x < b.x + b.size &&
-          player.x + player.width > b.x &&
-          player.y < b.y + b.size &&
-          player.y + player.height > b.y
-        ) {
-          player.hp -= 10;
-          player.invincible = true;
-          player.invincibleTimer = 500;
-
-          if (player.hp <= 0) {
-            player.hp = 0;
-            player.alive = false;
-            retryBtn.style.display = "block";
-          }
+      if (!player.invincible &&
+        player.x < b.x + b.size &&
+        player.x + player.width > b.x &&
+        player.y < b.y + b.size &&
+        player.y + player.height > b.y) {
+        player.hp -= 10;
+        player.invincible = true;
+        player.invincibleTimer = 500;
+        if (player.hp <= 0) {
+          player.hp = 0;
+          player.alive = false;
+          retryBtn.style.display = "block";
         }
       }
-
       if (b.y > canvas.height) bullets.splice(i, 1);
     }
   }
@@ -238,8 +258,6 @@ function update(deltaTime) {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Player
   if (player.alive) {
     ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
     if (player.invincible) {
@@ -247,16 +265,11 @@ function draw() {
       ctx.fillRect(player.x, player.y, player.width, player.height);
     }
   }
-
-  // Bullets
-  for (const b of bullets) {
+  for (let b of bullets) {
     const img = b.type === "bone" ? boneImg : gasterImg;
     ctx.drawImage(img, b.x, b.y, b.size, b.size);
   }
-
-  // HP bar
-  const hpX = 460;
-  const hpY = 420;
+  const hpX = 460, hpY = 420;
   ctx.fillStyle = "white";
   ctx.fillRect(hpX, hpY, 100, 14);
   ctx.fillStyle = "red";
@@ -267,36 +280,26 @@ function draw() {
   ctx.font = "12px monospace";
   ctx.fillText("HP", hpX - 30, hpY + 12);
 
-  // Menu
-  const menuX = 120;
-  const menuY = 440;
-  const selectorIndex = 0;
+  const menuX = 120, menuY = 440, selectorIndex = 0;
   let offsetX = 0;
   for (let i = 0; i < menuOptions.length; i++) {
-    const key = menuOptions[i].toLowerCase();
+    const text = menuOptions[i].toLowerCase();
     const selected = i === selectorIndex;
-    const img = selected ? menuImages[key + "_selected"] : menuImages[key];
+    const img = selected ? menuImages[text + "_selected"] : menuImages[text];
     ctx.drawImage(img, menuX + offsetX, menuY - 14);
     if (selected) {
-      ctx.fillStyle = "white";
       ctx.fillText("▶", menuX + offsetX - 16, menuY);
     }
     offsetX += 90;
   }
 
-  // Dialogue
   if ((showDialogue && dialogueIndex < dialogues.length) || !player.alive) {
     ctx.fillStyle = "white";
     ctx.fillRect(50, 350, 540, 40);
     ctx.fillStyle = "black";
     ctx.font = "14px monospace";
-    ctx.fillText(
-      player.alive ? dialogues[dialogueIndex] : "* Gaster: ... Pathetic.",
-      60,
-      375
-    );
+    ctx.fillText(player.alive ? dialogues[dialogueIndex] : "* Gaster: ... Pathetic.", 60, 375);
   }
-
   if (!player.alive) {
     ctx.fillStyle = "red";
     ctx.font = "40px monospace";
@@ -304,8 +307,8 @@ function draw() {
   }
 }
 
+let lastTime = 0;
 function gameLoop(timestamp = 0) {
-  if (!lastTime) lastTime = timestamp;
   const deltaTime = timestamp - lastTime;
   lastTime = timestamp;
   update(deltaTime);
@@ -313,31 +316,11 @@ function gameLoop(timestamp = 0) {
   requestAnimationFrame(gameLoop);
 }
 
-function startGame() {
-  useWASD = wasdCheckbox.checked;
-  player.hp = 100;
-  player.alive = true;
-  player.invincible = false;
-  player.invincibleTimer = 0;
-  player.x = 320;
-  player.y = 400;
-  bullets.length = 0;
-  dialogueIndex = 0;
-  showDialogue = true;
-  retryBtn.style.display = "none";
-  lastTime = 0;
-  requestAnimationFrame(gameLoop);
-}
-
 startBtn.addEventListener("click", () => {
   titleScreen.style.display = "none";
   startGame();
 });
-
-retryBtn.addEventListener("click", () => {
-  startGame();
-});
-
+retryBtn.addEventListener("click", () => startGame());
 setInterval(spawnBullet, 800);
 </script>
 </body>
