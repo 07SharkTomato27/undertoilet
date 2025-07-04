@@ -1,18 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Debug AU Fight</title>
-<style>
-  body { margin:0; background:black; color:white; font-family: monospace; }
-  canvas { display:block; margin:auto; background:#000; image-rendering: pixelated; }
-  #retryBtn, #titleScreen { font-family: monospace; }
-  #retryBtn { position:absolute; top:60%; left:50%; transform:translate(-50%, -50%); padding:10px 20px; font-size:20px; background:#222; border:2px solid white; cursor:pointer; display:none; }
-  #titleScreen { position:absolute; top:0; left:0; width:100vw; height:100vh; background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-  #startBtn { padding:10px 20px; font-size:20px; background:#222; border:2px solid white; cursor:pointer; color:white; }
-  #wasdToggleLabel { margin-top: 20px; font-size: 16px; user-select: none; }
-  #wasdCheckbox { transform: scale(1.3); margin-right: 8px; vertical-align: middle; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Debug AU Fight</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      color: white;
+      font-family: monospace;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background-color: #000;
+      image-rendering: pixelated;
+    }
+    #retryBtn, #titleScreen {
+      font-family: monospace;
+    }
+    #retryBtn {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 10px 20px;
+      font-size: 20px;
+      background: #222;
+      border: 2px solid white;
+      color: white;
+      display: none;
+      cursor: pointer;
+    }
+    #titleScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #startBtn {
+      padding: 10px 20px;
+      font-size: 20px;
+      background: #222;
+      border: 2px solid white;
+      cursor: pointer;
+      color: white;
+    }
+    #wasdToggleLabel {
+      margin-top: 20px;
+      font-size: 16px;
+      user-select: none;
+    }
+    #wasdCheckbox {
+      transform: scale(1.3);
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
 <div id="titleScreen">
@@ -55,6 +105,25 @@ let justPressedZ = false;
 let lastTime = 0;
 let useWASD = false;
 
+// Image assets
+const boneImg = new Image();
+boneImg.src = "assets/bone.png";
+const gasterImg = new Image();
+gasterImg.src = "assets/gaster.png";
+const charaImg = new Image();
+charaImg.src = "assets/chara.png";
+
+const menuOptions = ["FIGHT", "ACT", "ITEM", "MERCY"];
+const menuImages = {};
+for (const option of menuOptions) {
+  const keyNormal = option.toLowerCase();
+  const keySelected = keyNormal + "_selected";
+  menuImages[keyNormal] = new Image();
+  menuImages[keyNormal].src = `assets/menu_${keyNormal}.png`;
+  menuImages[keySelected] = new Image();
+  menuImages[keySelected].src = `assets/menu_${keyNormal}_selected.png`;
+}
+
 window.addEventListener("keydown", e => {
   if (!keys[e.key]) keys[e.key] = true;
   if ((e.key === "z" || e.key === "Z") && showDialogue) justPressedZ = true;
@@ -70,6 +139,7 @@ function spawnBullet() {
     y: -30,
     size: 30,
     speed: 2 + Math.random() * 2,
+    type: Math.random() < 0.5 ? "bone" : "gaster"
   });
 }
 
@@ -137,28 +207,62 @@ function update(deltaTime) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = player.invincible ? "rgba(255,255,255,0.5)" : "white";
-  if (player.alive) ctx.fillRect(player.x, player.y, player.width, player.height);
+  // Player
+  if (player.alive) {
+    ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
+    if (player.invincible) {
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+  }
 
-  ctx.fillStyle = "cyan";
-  for (const b of bullets) ctx.fillRect(b.x, b.y, b.size, b.size);
+  // Bullets
+  for (const b of bullets) {
+    const img = b.type === "bone" ? boneImg : gasterImg;
+    ctx.drawImage(img, b.x, b.y, b.size, b.size);
+  }
 
+  // HP bar
+  const hpX = 460;
+  const hpY = 420;
   ctx.fillStyle = "white";
-  ctx.fillRect(460, 380, 100, 14);
+  ctx.fillRect(hpX, hpY, 100, 14);
   ctx.fillStyle = "red";
-  ctx.fillRect(460, 380, player.hp, 14);
+  ctx.fillRect(hpX, hpY, player.hp, 14);
   ctx.strokeStyle = "black";
-  ctx.strokeRect(460, 380, 100, 14);
+  ctx.strokeRect(hpX, hpY, 100, 14);
   ctx.fillStyle = "white";
   ctx.font = "12px monospace";
-  ctx.fillText("HP", 430, 390);
+  ctx.fillText("HP", hpX - 30, hpY + 12);
 
-  if (showDialogue && dialogueIndex < dialogues.length) {
+  // Menu
+  const menuX = 120;
+  const menuY = 440;
+  const selectorIndex = 0;
+  let offsetX = 0;
+  for (let i = 0; i < menuOptions.length; i++) {
+    const key = menuOptions[i].toLowerCase();
+    const selected = i === selectorIndex;
+    const img = selected ? menuImages[key + "_selected"] : menuImages[key];
+    ctx.drawImage(img, menuX + offsetX, menuY - 14);
+    if (selected) {
+      ctx.fillStyle = "white";
+      ctx.fillText("▶", menuX + offsetX - 16, menuY);
+    }
+    offsetX += 90;
+  }
+
+  // Dialogue
+  if ((showDialogue && dialogueIndex < dialogues.length) || !player.alive) {
     ctx.fillStyle = "white";
     ctx.fillRect(50, 350, 540, 40);
     ctx.fillStyle = "black";
     ctx.font = "14px monospace";
-    ctx.fillText(dialogues[dialogueIndex], 60, 375);
+    ctx.fillText(
+      player.alive ? dialogues[dialogueIndex] : "* Gaster: ... Pathetic.",
+      60,
+      375
+    );
   }
 
   if (!player.alive) {
@@ -172,10 +276,8 @@ function gameLoop(timestamp = 0) {
   if (!lastTime) lastTime = timestamp;
   const deltaTime = timestamp - lastTime;
   lastTime = timestamp;
-
   update(deltaTime);
   draw();
-
   requestAnimationFrame(gameLoop);
 }
 
