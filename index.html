@@ -186,21 +186,13 @@ function startGame() {
   dialogueIndex = 0;
   showDialogue = true;
   combatStarted = false;
+  bulletSpawnTimer = 0;
   lastTime = 0;
   requestAnimationFrame(gameLoop);
 }
 
-function spawnBullet() {
-  if (!player.alive || !combatStarted) return;
-  const type = Math.random() < 0.5 ? "bone" : "gaster";
-  bullets.push({
-    x: Math.random() * (canvas.width - 40) + 20,
-    y: -30,
-    size: 30,
-    speed: 2 + Math.random() * 2,
-    type: type
-  });
-}
+let bulletSpawnTimer = 0;
+const bulletSpawnInterval = 800;
 
 function update(deltaTime) {
   if (!player.alive) return;
@@ -209,7 +201,6 @@ function update(deltaTime) {
     if (justPressedZ) {
       dialogueIndex++;
       justPressedZ = false;
-
       if (dialogueIndex >= dialogues.length) {
         showDialogue = false;
         combatStarted = true;
@@ -220,6 +211,19 @@ function update(deltaTime) {
   }
 
   if (!combatStarted) return;
+
+  bulletSpawnTimer += deltaTime;
+  if (bulletSpawnTimer >= bulletSpawnInterval) {
+    bulletSpawnTimer = 0;
+    const type = Math.random() < 0.5 ? "bone" : "gaster";
+    bullets.push({
+      x: Math.random() * (canvas.width - 40) + 20,
+      y: -30,
+      size: 30,
+      speed: 2 + Math.random() * 2,
+      type: type
+    });
+  }
 
   const left = useWASD ? keys["a"] || keys["A"] : keys["ArrowLeft"];
   const right = useWASD ? keys["d"] || keys["D"] : keys["ArrowRight"];
@@ -335,7 +339,6 @@ startBtn.addEventListener("click", () => {
   startGame();
 });
 retryBtn.addEventListener("click", () => startGame());
-setInterval(spawnBullet, 800);
 </script>
 </body>
 </html>
