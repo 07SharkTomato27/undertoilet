@@ -185,10 +185,10 @@ let currentEnemyExpression = "neutral";
           ) {
             player.hp -= 1;
             if (player.hp <= 0) {
-              player.hp = 0;
-              player.alive = false;
-              bgm.pause();
-              retryBtn.style.display = "block";
+            player.hp = 0;
+            player.alive = false;
+            bgm.pause();
+            fadeOutScreen();
             }
           }
         }
@@ -256,7 +256,7 @@ let currentEnemyExpression = "neutral";
       const menuX = 120;
       const menuY = 440;
       const menuOptions = ["FIGHT", "ACT", "ITEM", "MERCY"];
-      const selectorIndex = 0; // you can make this changeable later
+      let selectorIndex = 0; // you can make this changeable later
 
       let offsetX = 0;
       for (let i = 0; i < menuOptions.length; i++) {
@@ -297,6 +297,11 @@ let currentEnemyExpression = "neutral";
     }
 
     function draw() {
+  if (fadeOpacity < 1) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (fadeOpacity > 0) {
+    ctx.fillStyle = `rgba(0, 0, 0, ${fadeOpacity})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Draw enemy image at top center
@@ -310,6 +315,7 @@ let currentEnemyExpression = "neutral";
         ctx.font = "40px Courier New";
         ctx.fillStyle = "red";
         ctx.fillText("GAME OVER", 200, 240);
+    if (fadeOpacity >= 1) retryBtn.style.display = "block";
       }
 
       for (let b of bullets) {
@@ -330,6 +336,20 @@ let currentEnemyExpression = "neutral";
     let keys = {};
 let justPressedZ = false;
     window.addEventListener("keydown", e => {
+  if (!keys[e.key]) {
+    keys[e.key] = true;
+    if (e.key === "z" || e.key === "Z") {
+      if (showDialogue) justPressedZ = true;
+      else if (selectorIndex === 0) {
+        console.log("FIGHT selected");
+        // アタックゲージ処理追加予定
+      }
+    }
+    if (!showDialogue) {
+      if (e.key === "ArrowLeft" || e.key === "a") selectorIndex = (selectorIndex + 3) % 4;
+      if (e.key === "ArrowRight" || e.key === "d") selectorIndex = (selectorIndex + 1) % 4;
+    }
+  }
   if (!keys[e.key]) {
     keys[e.key] = true;
     if ((e.key === "z" || e.key === "Z") && showDialogue) {
@@ -362,6 +382,18 @@ window.addEventListener("keydown", (e) => {
     endIntro();
   }
 });
+
+// フェードアウト演出
+let fadeOpacity = 0;
+function fadeOutScreen() {
+  const fadeInterval = setInterval(() => {
+    fadeOpacity += 0.02;
+    if (fadeOpacity >= 1) {
+      fadeOpacity = 1;
+      clearInterval(fadeInterval);
+    }
+  }, 50);
+}
 
 gameLoop();
   </script>
