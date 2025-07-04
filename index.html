@@ -89,15 +89,19 @@ const introVideo = document.getElementById("introVideo");
     bgm.volume = 0.5;
 
     const player = {
-      x: 320,
-      y: 400,
-      width: 20,
-      height: 20,
-      color: "white",
-      speed: 4,
-      hp: 100,
-      alive: false
-    };
+  x: 320,
+  y: 400,
+  width: 20,
+  height: 20,
+  color: "white",
+  speed: 4,
+  hp: 100,
+  alive: false,
+  invincible: false,
+  invincibleTimer: 0,
+  flashTimer: 0,
+  flash: false
+};
 
     let dialogueIndex = 0;
 let showDialogue = false;
@@ -155,7 +159,21 @@ let currentEnemyExpression = "neutral";
     }
 
     function update() {
+      const now = performance.now();
       if (!player.alive) return;
+
+      if (player.invincible) {
+        player.invincibleTimer -= 16;
+        player.flashTimer += 16;
+        if (player.flashTimer > 100) {
+          player.flash = !player.flash;
+          player.flashTimer = 0;
+        }
+        if (player.invincibleTimer <= 0) {
+          player.invincible = false;
+          player.flash = false;
+        }
+      }
 
       // セリフ中の処理
       if (showDialogue) {
@@ -176,18 +194,29 @@ let currentEnemyExpression = "neutral";
         if (keys["ArrowDown"]) player.y += player.speed;
 
         for (let b of bullets) {
-          b.y += b.speed;
-          if (
+        b.y += b.speed;
+        if (!player.invincible &&
             player.x < b.x + b.size &&
             player.x + player.width > b.x &&
             player.y < b.y + b.size &&
             player.y + player.height > b.y
           ) {
             player.hp -= 1;
+            player.invincible = true;
+            player.invincibleTimer = 1000;
+            player.flashTimer = 0;
             if (player.hp <= 0) {
             player.hp = 0;
             player.alive = false;
-            bgm.pause();
+            let fade = setInterval(() => {
+              if (bgm.volume > 0.05) {
+                bgm.volume -= 0.05;
+              } else {
+                bgm.volume = 0;
+                bgm.pause();
+                clearInterval(fade);
+              }
+            }, 100);
             fadeOutScreen();
             }
           }
@@ -249,6 +278,14 @@ let currentEnemyExpression = "neutral";
 
       ctx.fillStyle = "white";
       ctx.font = "12px Courier New";
+      let displayText = "";
+      if (showDialogue && dialogueIndex < dialogues.length) {
+        let full = dialogues[dialogueIndex];
+        let len = Math.min(full.length, Math.floor(performance.now() / 20) % (full.length + 1));
+        displayText = full.slice(0, len);
+      } else if (!player.alive) {
+        displayText = "* Gaster: ... Pathetic.";
+      }
       ctx.fillText("HP", hpX - 25, hpY + 10); // outer stroke
 
       ctx.font = "16px Courier New";
@@ -310,7 +347,7 @@ let currentEnemyExpression = "neutral";
       drawUI();
 
       if (player.alive) {
-        ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
+        if (!player.flash) ctx.drawImage(charaImg, player.x, player.y, player.width, player.height);
       } else if (player.hp === 0) {
         ctx.font = "40px Courier New";
         ctx.fillStyle = "red";
@@ -342,7 +379,8 @@ let justPressedZ = false;
       if (showDialogue) justPressedZ = true;
       else if (selectorIndex === 0) {
         console.log("FIGHT selected");
-        // アタックゲージ処理追加予定
+        // アタックゲージ処理
+        showAttackBar();
       }
     }
     if (!showDialogue) {
@@ -393,6 +431,49 @@ function fadeOutScreen() {
       clearInterval(fadeInterval);
     }
   }, 50);
+}
+
+// アタックバー描画処理
+function showAttackBar() {
+  let barX = 120, barY = 200, barW = 400, barH = 20;
+  let sliderX = barX;
+  let direction = 1;
+  let running = true;
+
+  function drawAttack() {
+    ctx.clearRect(barX - 10, barY - 10, barW + 20, barH + 20);
+    ctx.fillStyle = "white";
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = "red";
+    ctx.fillRect(sliderX, barY, 10, barH);
+  }
+
+  function animate() {
+    if (!running) return;
+    sliderX += 6 * direction;
+    if (sliderX > barX + barW - 10 || sliderX < barX) direction *= -1;
+    drawAttack();
+    requestAnimationFrame(animate);
+  }
+
+  function stopAttack() {
+    running = false;
+    let center = barX + barW / 2;
+    let diff = Math.abs(center - sliderX);
+    let damage = Math.max(0, 40 - diff);
+    console.log("Attack landed! Damage:", damage);
+    // ダメージ処理をここに入れる（例: enemy.hp -= damage）
+    ctx.clearRect(barX - 10, barY - 10, barW + 20, barH + 20);
+  }
+
+  window.addEventListener("keydown", function once(e) {
+    if (e.key === "z" || e.key === "Z") {
+      stopAttack();
+      window.removeEventListener("keydown", once);
+    }
+  });
+
+  animate();
 }
 
 gameLoop();
